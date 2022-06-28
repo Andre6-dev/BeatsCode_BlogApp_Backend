@@ -1,3 +1,12 @@
+
+//ERROR HANDLER PAGE NOT FOUND
+const notFound = (req, res, next) => {
+    const error = new Error(`Page not Found - ${req.originalUrl}`);
+    res.status(404);
+    next(error);
+};
+
+// ERROR HANDLER TO ERROR
 const errorHandler = (err, req, res, next) => {
     const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
     res.status(statusCode);
@@ -7,4 +16,4 @@ const errorHandler = (err, req, res, next) => {
     });
 };
 
-module.exports = { errorHandler }
+module.exports = { errorHandler, notFound };
