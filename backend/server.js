@@ -10,6 +10,7 @@ const app = express();
 dbConnect();
 
 // MIDDLEWARE
+/* Allow us to receive parameters in Json format*/
 app.use(express.json());
 
 // USERS ROUTE
