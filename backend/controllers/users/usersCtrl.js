@@ -2,6 +2,7 @@ const expressAsyncHandler = require("express-async-handler");
 const PATH = '../../models/user/'
 const User = require(PATH + 'User');
 const express = require("express");
+const generateToken = require("../../config/token/generateToken");
 
 // -------------------------------------
 // Register
@@ -38,7 +39,14 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
     const userFound = await User.findOne({ email });
     // Check if both passwords are equal
     if (userFound && (await  userFound.isPasswordMatched(password))) {
-        res.json(userFound);
+        res.json({
+            firstName: userFound?.firstName,
+            lastName: userFound?.lastName,
+            email: userFound?.email,
+            profilePhoto: userFound?.profilePhoto,
+            lastName: userFound?.isAdmin,
+            token: generateToken(userFound?._id),
+        });
     } else {
         res.status(401);
         throw new Error("Invalid Login Credentials")
