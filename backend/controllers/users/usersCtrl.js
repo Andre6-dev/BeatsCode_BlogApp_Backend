@@ -3,6 +3,7 @@ const PATH = '../../models/user/'
 const User = require(PATH + 'User');
 const express = require("express");
 const generateToken = require("../../config/token/generateToken");
+const validateMongodbId = require("../utils/validateMongodbID");
 
 // -------------------------------------
 // Register
@@ -67,4 +68,21 @@ const fetchUsersCtrl = expressAsyncHandler(async (req, res) => {
     }
 });
 
-module.exports = {userRegisterCtrl, loginUserCtrl, fetchUsersCtrl};
+// -------------------------------------
+// DELETE USER
+// -------------------------------------
+
+const deleteUsersCtrl = expressAsyncHandler(async (req, res) => { 
+    const { id } = req.params;
+
+    /* Check if user id is valid */
+    validateMongodbId(id);
+    try {
+        const deletedUser = await User.findByIdAndDelete(id);
+        res.json(deletedUser);
+    } catch (error) {
+        res.json(error);
+    }
+});
+
+module.exports = {userRegisterCtrl, loginUserCtrl, fetchUsersCtrl, deleteUsersCtrl};
