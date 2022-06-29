@@ -40,6 +40,7 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
     // Check if both passwords are equal
     if (userFound && (await  userFound.isPasswordMatched(password))) {
         res.json({
+            _id: userFound?.id,
             firstName: userFound?.firstName,
             lastName: userFound?.lastName,
             email: userFound?.email,
@@ -53,4 +54,17 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
     }
 });
 
-module.exports = {userRegisterCtrl, loginUserCtrl};
+// -------------------------------------
+// USERS - LIST
+// -------------------------------------
+
+const fetchUsersCtrl = expressAsyncHandler(async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.json(users);
+    } catch (error) {
+        res.json(error);
+    }
+});
+
+module.exports = {userRegisterCtrl, loginUserCtrl, fetchUsersCtrl};
