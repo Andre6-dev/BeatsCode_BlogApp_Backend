@@ -1,7 +1,5 @@
 const expressAsyncHandler = require("express-async-handler");
-const PATH = "../../models/user/";
-const User = require(PATH + "User");
-const express = require("express");
+const User = require("../../models/user/User");
 const generateToken = require("../../config/token/generateToken");
 const validateMongodbId = require("../../utils/validateMongodbID");
 
@@ -45,7 +43,7 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
       lastName: userFound?.lastName,
       email: userFound?.email,
       profilePhoto: userFound?.profilePhoto,
-      lastName: userFound?.isAdmin,
+      isAdmin: userFound?.isAdmin,
       token: generateToken(userFound?._id),
     });
   } else {
@@ -141,6 +139,28 @@ const updateUserCtrl = expressAsyncHandler(async (req, res) => {
   res.json(user);
 });
 
+// -------------------------------------
+// UPDATE PASSWORD
+// -------------------------------------
+
+const updateUserPasswordCtrl = expressAsyncHandler(async (req, res) => {
+  // destructure the login user
+  const { _id } = req.user;
+  // this password will come from body
+  const { password } = req.body;
+  validateMongodbId(_id);
+  // Find the user by id
+  const user = await User.findById(_id);
+
+  if (password) {
+    user.password = password;
+    const updatedUser = await user.save();
+    res.json(updatedUser);
+  } else {
+    res.json(user);
+  }
+});
+
 module.exports = {
   userRegisterCtrl,
   loginUserCtrl,
@@ -149,4 +169,5 @@ module.exports = {
   fetchUsersDetailsCtrl,
   userProfileCtrl,
   updateUserCtrl,
+  updateUserPasswordCtrl,
 };
