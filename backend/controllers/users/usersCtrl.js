@@ -179,15 +179,52 @@ const followingUserCtrl = expressAsyncHandler(async (req, res) => {
   if (alreadyFollowing) throw new Error("You already followed this user");
 
   /* 1. Find the user you want to follow and update it's followers field */
-  await User.findByIdAndUpdate(followId, {
-    $push: { followers: loginUserId },
-  });
+  await User.findByIdAndUpdate(
+    followId,
+    {
+      $push: { followers: loginUserId },
+      isFollowing: true,
+    },
+    { new: true }
+  );
 
   /* 2. Update the login user following field */
-  await User.findByIdAndUpdate(loginUserId, {
-    $push: { following: followId },
-  });
+  await User.findByIdAndUpdate(
+    loginUserId,
+    {
+      $push: { following: followId },
+    },
+    { new: true }
+  );
   res.json("You have successfully following this user");
+});
+
+// -------------------------------------
+// UNFOLLOWING
+// -------------------------------------
+
+const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
+  const { unFollowId } = req.body;
+  const loginUserId = req.user.id;
+
+  await User.findByIdAndUpdate(
+    unFollowId,
+    {
+      $pull: { followers: loginUserId },
+      isFollowing: false,
+    },
+    { new: true }
+  );
+
+  await User.findByIdAndUpdate(
+    loginUserId,
+    {
+      $pull: { following: unFollowId },
+    },
+    { new: true }
+  );
+
+  res.json("You have successfully unfollowing this user");
 });
 
 module.exports = {
@@ -200,4 +237,5 @@ module.exports = {
   updateUserCtrl,
   updateUserPasswordCtrl,
   followingUserCtrl,
+  unfollowUserCtrl,
 };
