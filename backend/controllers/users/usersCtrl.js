@@ -59,6 +59,7 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
 // -------------------------------------
 
 const fetchUsersCtrl = expressAsyncHandler(async (req, res) => {
+  console.log(req.headers);
   try {
     const users = await User.find({});
     res.json(users);
