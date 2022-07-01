@@ -125,7 +125,7 @@ userSchema.methods.isPasswordMatched = async function (enteredPassword) {
 // VERIFY ACCOUNT
 userSchema.methods.createAccountVerificationToken = async function () {
   // Create a token
-  const verificationToken = crypto.createHash(32).update("hex");
+  const verificationToken = crypto.randomBytes(32).toString("hex");
   this.accountVerificationToken = crypto
     .createHash("sha256")
     .update(verificationToken)

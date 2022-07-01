@@ -1,5 +1,6 @@
 const expressAsyncHandler = require("express-async-handler");
 const User = require("../../models/user/User");
+const crypto = require("crypto");
 const generateToken = require("../../config/token/generateToken");
 const validateMongodbId = require("../../utils/validateMongodbID");
 const dotenv = require("dotenv");
@@ -271,32 +272,59 @@ const unBlockUserCtrl = expressAsyncHandler(async (req, res) => {
 });
 
 // -------------------------------------
-// SENDING EMAIL
+// GENERATE EMAIL VERIFICATION TOKEN
 // -------------------------------------
 
 const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
   // Getting the user id
   const loginUserId = req.user.id;
   const user = await User.findById(loginUserId);
-  console.log(user);
   try {
     // Generates token
-    const verificationToken = user.createAccountVerificationToken();
+    const verificationToken = await user.createAccountVerificationToken();
+    // Save User
+    await user.save();
     console.log(verificationToken);
 
+    const resetURL = `If you were requested to verify your account, verify now within 10 minutes, otherwise ignore this message 
+    <a href="http://localhost:3000/verify-account/${verificationToken}">Click to verify your account</a>`;
     const data = {
       from: "BeatsCode Blog App <andre@beatscode.com>",
       to: "ndre322@gmail.com",
       subject: "BeatsCode Blog App",
-      text: "Testeando some Mailgun awesomness!",
+      text: "Token verification",
+      html: resetURL,
     };
     mg.messages().send(data, function (error, body) {
       console.log(body);
     });
-    res.json("Email sent");
+    res.json(resetURL);
   } catch (error) {
     res.json(error);
   }
+});
+
+//------------------------------
+// ACCOUNT VERIFICATION
+//------------------------------
+
+const accountVerificationCtrl = expressAsyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  //Find this user by token
+
+  const userFound = await User.findOne({
+    accountVerificationToken: hashedToken,
+    accountVerificationTokenExpires: { $gt: new Date() },
+  });
+  if (!userFound) throw new Error("Token expired, try again later");
+  //update the proprt to true
+  userFound.isAccountVerified = true;
+  userFound.accountVerificationToken = undefined;
+  userFound.accountVerificationTokenExpires = undefined;
+  await userFound.save();
+  res.json(userFound);
 });
 
 module.exports = {
@@ -313,4 +341,5 @@ module.exports = {
   unfollowUserCtrl,
   blockUserCtrl,
   unBlockUserCtrl,
+  accountVerificationCtrl,
 };
