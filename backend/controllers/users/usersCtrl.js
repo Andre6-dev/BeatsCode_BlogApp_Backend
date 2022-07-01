@@ -2,6 +2,13 @@ const expressAsyncHandler = require("express-async-handler");
 const User = require("../../models/user/User");
 const generateToken = require("../../config/token/generateToken");
 const validateMongodbId = require("../../utils/validateMongodbID");
+const dotenv = require("dotenv");
+dotenv.config();
+const API_KEY = process.env.API_KEY;
+const DOMAIN = process.env.DOMAIN;
+
+const mailgun = require("mailgun-js");
+const mg = mailgun({ apiKey: API_KEY, domain: DOMAIN });
 
 // -------------------------------------
 // Register
@@ -227,7 +234,73 @@ const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
   res.json("You have successfully unfollowing this user");
 });
 
+// -------------------------------------
+// BLOCK USER
+// -------------------------------------
+
+const blockUserCtrl = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongodbId(id);
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    {
+      isBlocked: true,
+    },
+    { new: true }
+  );
+  res.json(user);
+});
+
+// -------------------------------------
+// UNBLOCK USER
+// -------------------------------------
+
+const unBlockUserCtrl = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongodbId(id);
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    {
+      isBlocked: false,
+    },
+    { new: true }
+  );
+  res.json(user);
+});
+
+// -------------------------------------
+// SENDING EMAIL
+// -------------------------------------
+
+const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
+  // Getting the user id
+  const loginUserId = req.user.id;
+  const user = await User.findById(loginUserId);
+  console.log(user);
+  try {
+    // Generates token
+    const verificationToken = user.createAccountVerificationToken();
+    console.log(verificationToken);
+
+    const data = {
+      from: "BeatsCode Blog App <andre@beatscode.com>",
+      to: "ndre322@gmail.com",
+      subject: "BeatsCode Blog App",
+      text: "Testeando some Mailgun awesomness!",
+    };
+    mg.messages().send(data, function (error, body) {
+      console.log(body);
+    });
+    res.json("Email sent");
+  } catch (error) {
+    res.json(error);
+  }
+});
+
 module.exports = {
+  generateVerificationTokenCtrl,
   userRegisterCtrl,
   loginUserCtrl,
   fetchUsersCtrl,
@@ -238,4 +311,6 @@ module.exports = {
   updateUserPasswordCtrl,
   followingUserCtrl,
   unfollowUserCtrl,
+  blockUserCtrl,
+  unBlockUserCtrl,
 };
