@@ -5,6 +5,7 @@ const dbConnect = require("./config/db/dbConnect");
 const userRoutes = require("./routes/users/usersRoute");
 const { errorHandler, notFound } = require("./middlewares/error/errorHandler");
 const postRoute = require("./routes/posts/postRoute");
+const CommentsRoutes = require("./routes/comments/commentRoute");
 
 const app = express();
 //DB
@@ -14,11 +15,14 @@ dbConnect();
 /* Allow us to receive parameters in Json format*/
 app.use(express.json());
 
-// USERS ROUTE
+// USERS ROUTES
 app.use("/api/users", userRoutes);
 
-// POSTS ROUTE
+// POSTS ROUTES
 app.use("/api/posts", postRoute);
+
+// COMMENT ROUTES
+app.use("/api/comments", CommentsRoutes);
 
 // ERROR HANDLER
 app.use(notFound); // We put this error in this order because we need the message before we executed the next app.use(error Handler)
