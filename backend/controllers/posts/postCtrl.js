@@ -69,10 +69,44 @@ const fetchPostCtrl = expressAsyncHandler(async (req, res) => {
   validateMongodbId(id);
   try {
     const post = await Post.findById(id).populate("user");
+    // UPDATE NUMBER OF VIEWS
+    await Post.findByIdAndUpdate(
+      id,
+      {
+        $inc: { numViews: 1 }, // increase by 1
+      },
+      { new: true }
+    );
     res.json(post);
   } catch (error) {
     res.json(error);
   }
 });
 
-module.exports = { createPostController, fetchPostsCtrl, fetchPostCtrl };
+//------------------------------
+// UPDATE POSTS
+//------------------------------
+const updatePostCtrl = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongodbId(id);
+  try {
+    const post = await Post.findByIdAndUpdate(
+      id,
+      {
+        ...req.body,
+        user: req.user?._id,
+      },
+      { new: true }
+    );
+    res.json(post);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+module.exports = {
+  updatePostCtrl,
+  createPostController,
+  fetchPostsCtrl,
+  fetchPostCtrl,
+};
