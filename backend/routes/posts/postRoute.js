@@ -6,6 +6,7 @@ const {
   updatePostCtrl,
   deletePostCtrl,
   toggleAddLikeToPostCtrl,
+  toggleAddDislikeToPostCtrl,
 } = require("../../controllers/posts/postCtrl");
 const authMiddleware = require("../../middlewares/auth/authMiddleware");
 const {
@@ -24,7 +25,7 @@ postRoute.post(
 );
 
 postRoute.put("/likes", authMiddleware, toggleAddLikeToPostCtrl);
-
+postRoute.put("/dislikes", authMiddleware, toggleAddDislikeToPostCtrl);
 postRoute.get("/", fetchPostsCtrl);
 postRoute.get("/:id", fetchPostCtrl);
 postRoute.put("/:id", authMiddleware, updatePostCtrl); // Single post
