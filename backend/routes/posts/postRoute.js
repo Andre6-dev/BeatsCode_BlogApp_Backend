@@ -2,6 +2,7 @@ const express = require("express");
 const {
   createPostController,
   fetchPostsCtrl,
+  fetchPostCtrl,
 } = require("../../controllers/posts/postCtrl");
 const authMiddleware = require("../../middlewares/auth/authMiddleware");
 const {
@@ -20,5 +21,6 @@ postRoute.post(
 );
 
 postRoute.get("/", fetchPostsCtrl);
+postRoute.get("/:id", fetchPostCtrl); // Single post
 
 module.exports = postRoute;

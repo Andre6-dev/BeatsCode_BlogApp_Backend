@@ -61,4 +61,18 @@ const fetchPostsCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createPostController, fetchPostsCtrl };
+//------------------------------
+// FETCH A SINGLE POST
+//------------------------------
+const fetchPostCtrl = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongodbId(id);
+  try {
+    const post = await Post.findById(id).populate("user");
+    res.json(post);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+module.exports = { createPostController, fetchPostsCtrl, fetchPostCtrl };
