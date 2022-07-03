@@ -124,14 +124,26 @@ userSchema.methods.isPasswordMatched = async function (enteredPassword) {
 
 // VERIFY ACCOUNT
 userSchema.methods.createAccountVerificationToken = async function () {
-  // Create a token
+  //create a token
   const verificationToken = crypto.randomBytes(32).toString("hex");
   this.accountVerificationToken = crypto
     .createHash("sha256")
     .update(verificationToken)
     .digest("hex");
-  this.accountVerificationTokenExpires = Date.now() + 30 * 60 * 1000; // 10 minutes to verify the account.
+  this.accountVerificationTokenExpires = Date.now() + 30 * 60 * 1000; //10 minutes
   return verificationToken;
+};
+
+// PASSWORD RESET/FORGET
+
+userSchema.methods.createPasswordResetToken = async function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.passwordResetExpires = Date.now() + 30 * 60 * 1000; //10 minutes
+  return resetToken;
 };
 
 // COMPILE SCHEMA INTO MODEL

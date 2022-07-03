@@ -327,6 +327,65 @@ const accountVerificationCtrl = expressAsyncHandler(async (req, res) => {
   res.json(userFound);
 });
 
+//------------------------------
+// FORGET TOKEN GENERATOR
+//------------------------------
+
+const forgetPasswordToken = expressAsyncHandler(async (req, res) => {
+  // FINF THE USER BY EMAIL
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) throw new Error("User not found, try again");
+
+  try {
+    const token = await user.createPasswordResetToken();
+    console.log(token);
+    await user.save();
+
+    const resetURL = `If you were requested to reset your password, reset now within 10 minutes, otherwise ignore this message 
+    <a href="http://localhost:3000/reset-password/${token}">Click to reset</a>`;
+    const data = {
+      from: "marketingBeatscode@gmail.com",
+      to: email,
+      subject: "Reset Password",
+      html: resetURL,
+    };
+
+    const emailMsg = mg.messages().send(data, function (error, body) {
+      console.log(body);
+    });
+    res.json({
+      msg: `A verification message has been successfully sent to ${user?.email}. Reset now within 10 minutes, ${resetURL}`,
+    });
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+//------------------------------
+// PASSWORD RESET
+//------------------------------
+
+const passwordResetCtrl = expressAsyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  // Find this user by token
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) throw new Error("Token expired, try again later");
+
+  //Update/change the password
+  user.password = password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+  res.json(user);
+});
+
 module.exports = {
   generateVerificationTokenCtrl,
   userRegisterCtrl,
@@ -342,4 +401,6 @@ module.exports = {
   blockUserCtrl,
   unBlockUserCtrl,
   accountVerificationCtrl,
+  forgetPasswordToken,
+  passwordResetCtrl,
 };
