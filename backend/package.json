@@ -10,6 +10,7 @@
   "author": "Andre6Dev",
   "license": "ISC",
   "dependencies": {
+    "bad-words": "^3.0.4",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.30.0",
     "dotenv": "^16.0.1",

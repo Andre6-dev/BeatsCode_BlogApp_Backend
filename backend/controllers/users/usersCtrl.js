@@ -1,5 +1,6 @@
 const expressAsyncHandler = require("express-async-handler");
 const User = require("../../models/user/User");
+const fs = require("fs");
 const crypto = require("crypto");
 const generateToken = require("../../config/token/generateToken");
 const validateMongodbId = require("../../utils/validateMongodbID");
@@ -409,7 +410,11 @@ const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
     { new: true }
   );
 
-  res.json(foundUser);
+  // remove the saved image
+  fs.unlinkSync(localPath);
+
+  //res.json(foundUser);
+  res.json(imgUploaded);
 });
 
 module.exports = {
