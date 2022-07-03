@@ -9,6 +9,7 @@ const API_KEY = process.env.API_KEY;
 const DOMAIN = process.env.DOMAIN;
 
 const mailgun = require("mailgun-js");
+const cloudinaryUploadImage = require("../../utils/cloudinary");
 const mg = mailgun({ apiKey: API_KEY, domain: DOMAIN });
 
 // -------------------------------------
@@ -386,6 +387,31 @@ const passwordResetCtrl = expressAsyncHandler(async (req, res) => {
   res.json(user);
 });
 
+//------------------------------
+// PROFILE PHOTO UPLOAD
+//------------------------------
+
+const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
+  // Find the login user
+  const { _id } = req.user;
+
+  // 1. Get the image path
+  const localPath = `public/images/profile/${req.file.filename}`;
+
+  // 2. Upload the photo to Cloudinary
+  const imgUploaded = await cloudinaryUploadImage(localPath);
+
+  const foundUser = await User.findByIdAndUpdate(
+    _id,
+    {
+      profilePhoto: imgUploaded?.url,
+    },
+    { new: true }
+  );
+
+  res.json(foundUser);
+});
+
 module.exports = {
   generateVerificationTokenCtrl,
   userRegisterCtrl,
@@ -403,4 +429,5 @@ module.exports = {
   accountVerificationCtrl,
   forgetPasswordToken,
   passwordResetCtrl,
+  profilePhotoUploadCtrl,
 };
