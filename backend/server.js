@@ -1,12 +1,13 @@
-const express = require('express');
-const dotenv = require('dotenv');
+const express = require("express");
+const dotenv = require("dotenv");
 dotenv.config();
 const dbConnect = require("./config/db/dbConnect");
 const userRoutes = require("./routes/users/usersRoute");
-const {errorHandler, notFound} = require("./middlewares/error/errorHandler");
+const { errorHandler, notFound } = require("./middlewares/error/errorHandler");
+const postRoute = require("./routes/posts/postRoute");
 
 const app = express();
-//DB 
+//DB
 dbConnect();
 
 // MIDDLEWARE
@@ -16,9 +17,12 @@ app.use(express.json());
 // USERS ROUTE
 app.use("/api/users", userRoutes);
 
+// POSTS ROUTE
+app.use("/api/posts", postRoute);
+
 // ERROR HANDLER
 app.use(notFound); // We put this error in this order because we need the message before we executed the next app.use(error Handler)
 app.use(errorHandler);
-// SERVER 
+// SERVER
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, console.log(`Server is running on port ${PORT}`));
