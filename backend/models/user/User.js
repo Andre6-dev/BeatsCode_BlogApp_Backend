@@ -106,7 +106,14 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash Password
+// VIRTUAL MEETHOD TO POPULATEE CREATED POST
+userSchema.virtual("posts", {
+  ref: "Post",
+  foreignField: "user",
+  localField: "_id",
+});
+
+// HASH PASSWORD
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     next();

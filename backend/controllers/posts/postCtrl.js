@@ -6,6 +6,9 @@ const validateMongodbId = require("../../utils/validateMongodbID");
 const User = require("../../models/user/User");
 const cloudinaryUploadImage = require("../../utils/cloudinary");
 
+//------------------------------
+// CREATE POST
+//------------------------------
 const createPostController = expressAsyncHandler(async (req, res) => {
   const { _id } = req.user;
   // We need the login user id to validate the post
@@ -13,7 +16,6 @@ const createPostController = expressAsyncHandler(async (req, res) => {
 
   // Check for bad words
   filter = new Filter();
-
   const isProfane = filter.isProfane(req.body.title, req.body.description);
 
   // Block User
@@ -47,4 +49,16 @@ const createPostController = expressAsyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createPostController };
+//------------------------------
+// FETCH ALL POSTS
+//------------------------------
+const fetchPostsCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const posts = await Post.find({}).populate("user");
+    res.json(posts);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+module.exports = { createPostController, fetchPostsCtrl };
