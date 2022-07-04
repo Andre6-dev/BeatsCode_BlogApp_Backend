@@ -1,6 +1,9 @@
 const expressAsyncHandler = require("express-async-handler");
 const Comment = require("../../models/comment/Comment");
 
+//------------------------------
+// CREATE A COMMENT
+//------------------------------
 const createCommentCtrl = expressAsyncHandler(async (req, res) => {
   // 1.Get the user
   const user = req.user;
@@ -19,4 +22,17 @@ const createCommentCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createCommentCtrl };
+//------------------------------
+// FETCH ALL COMMENTS
+//------------------------------
+const fetchAllCommentsCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const comments = await Comment.find({}).sort("-created");
+    res.json(comments);
+  } catch (error) {
+    res.json(error);
+  }
+  res.json("comments");
+});
+
+module.exports = { createCommentCtrl, fetchAllCommentsCtrl };
