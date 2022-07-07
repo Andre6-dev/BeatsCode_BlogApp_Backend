@@ -1,9 +1,7 @@
 const expressAsyncHandler = require("express-async-handler");
-const Category = require("../../models/category/Category");
+const Category = require("../../model/Category/Category");
 
-//------------------------------
-// CREATE A CATEGORY
-//------------------------------
+//create
 const createCategoryCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const category = await Category.create({
@@ -16,9 +14,7 @@ const createCategoryCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-//------------------------------
-// FETCH ALL CATEGORIES
-//------------------------------
+//fetch all
 const fetchCategoriesCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const categories = await Category.find({})
@@ -30,9 +26,7 @@ const fetchCategoriesCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-//------------------------------
-// FETCH A SINGLE CATEGORY
-//------------------------------
+//fetch a single category
 const fetchCategoryCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
@@ -45,9 +39,7 @@ const fetchCategoryCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-//------------------------------
-// UPDATE A CATEGORY
-//------------------------------
+//update
 const updateCategoryCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
@@ -56,7 +48,10 @@ const updateCategoryCtrl = expressAsyncHandler(async (req, res) => {
       {
         title: req?.body?.title,
       },
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true,
+      }
     );
     res.json(category);
   } catch (error) {
@@ -64,23 +59,21 @@ const updateCategoryCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-//------------------------------
-// DELETE A CATEGORY
-//------------------------------
-const deleteCategoryCtrl = expressAsyncHandler(async (req, res) => {
+//delete category
+const deleteCateoryCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const category = await Category.findByIdAndDelete(id);
+
     res.json(category);
   } catch (error) {
     res.json(error);
   }
 });
-
 module.exports = {
   createCategoryCtrl,
   updateCategoryCtrl,
   fetchCategoriesCtrl,
   fetchCategoryCtrl,
-  deleteCategoryCtrl,
+  deleteCateoryCtrl,
 };

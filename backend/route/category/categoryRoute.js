@@ -4,16 +4,14 @@ const {
   fetchCategoriesCtrl,
   fetchCategoryCtrl,
   updateCategoryCtrl,
-  deleteCategoryCtrl,
+  deleteCateoryCtrl,
 } = require("../../controllers/category/categoryCtrl");
-
 const authMiddleware = require("../../middlewares/auth/authMiddleware");
 const categoryRoute = express.Router();
 
 categoryRoute.post("/", authMiddleware, createCategoryCtrl);
-categoryRoute.get("/", authMiddleware, fetchCategoriesCtrl);
-categoryRoute.get("/:id", authMiddleware, fetchCategoryCtrl);
+categoryRoute.get("/", fetchCategoriesCtrl);
+categoryRoute.get("/:id", fetchCategoryCtrl);
 categoryRoute.put("/:id", authMiddleware, updateCategoryCtrl);
-categoryRoute.delete("/:id", authMiddleware, deleteCategoryCtrl);
-
+categoryRoute.delete("/:id", authMiddleware, deleteCateoryCtrl);
 module.exports = categoryRoute;

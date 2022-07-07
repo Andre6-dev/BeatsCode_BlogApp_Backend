@@ -1,31 +1,29 @@
 const expressAsyncHandler = require("express-async-handler");
-const User = require("../../models/user/User");
 const fs = require("fs");
 const crypto = require("crypto");
 const generateToken = require("../../config/token/generateToken");
+const User = require("../../model/user/User");
 const validateMongodbId = require("../../utils/validateMongodbID");
-const dotenv = require("dotenv");
-dotenv.config();
+const cloudinaryUploadImg = require("../../utils/cloudinary");
+const blockUser = require("../../utils/blockUser");
 const API_KEY = process.env.API_KEY;
 const DOMAIN = process.env.DOMAIN;
 
 const mailgun = require("mailgun-js");
-const cloudinaryUploadImage = require("../../utils/cloudinary");
 const mg = mailgun({ apiKey: API_KEY, domain: DOMAIN });
 
-// -------------------------------------
-// Register
-// -------------------------------------
+//-------------------------------------
+//Register
+//-------------------------------------
+
 const userRegisterCtrl = expressAsyncHandler(async (req, res) => {
-  // CHECK IF USER EXISTS
+  //Check if user Exist
   const userExists = await User.findOne({ email: req?.body?.email });
 
   if (userExists) throw new Error("User already exists");
-
   try {
-    // Register user
+    //Register user
     const user = await User.create({
-      /* We are establishing that the following parameters are required */
       firstName: req?.body?.firstName,
       lastName: req?.body?.lastName,
       email: req?.body?.email,
@@ -37,24 +35,28 @@ const userRegisterCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// -------------------------------------
-// Login
-// -------------------------------------
+//-------------------------------
+//Login user
+//-------------------------------
 
 const loginUserCtrl = expressAsyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  // Check if user exists
+  //check if user exists
   const userFound = await User.findOne({ email });
-  // Check if both passwords are equal
+  //check if blocked
+  if (userFound?.isBlocked)
+    throw new Error("Access Denied You have been blocked");
   if (userFound && (await userFound.isPasswordMatched(password))) {
+    //Check if password is match
     res.json({
-      _id: userFound?.id,
+      _id: userFound?._id,
       firstName: userFound?.firstName,
       lastName: userFound?.lastName,
       email: userFound?.email,
       profilePhoto: userFound?.profilePhoto,
       isAdmin: userFound?.isAdmin,
       token: generateToken(userFound?._id),
+      isVerified: userFound?.isAccountVerified,
     });
   } else {
     res.status(401);
@@ -62,28 +64,25 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// -------------------------------------
-// USERS - LIST
-// -------------------------------------
-
+//------------------------------
+//Users
+//-------------------------------
 const fetchUsersCtrl = expressAsyncHandler(async (req, res) => {
   console.log(req.headers);
   try {
-    const users = await User.find({});
+    const users = await User.find({}).populate("posts");
     res.json(users);
   } catch (error) {
     res.json(error);
   }
 });
 
-// -------------------------------------
-// DELETE USER
-// -------------------------------------
-
+//------------------------------
+//Delete user
+//------------------------------
 const deleteUsersCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
-
-  /* Check if user id is valid */
+  //check if user id is valid
   validateMongodbId(id);
   try {
     const deletedUser = await User.findByIdAndDelete(id);
@@ -93,13 +92,12 @@ const deleteUsersCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// -------------------------------------
-// USER DETAILS
-// -------------------------------------
-
-const fetchUsersDetailsCtrl = expressAsyncHandler(async (req, res) => {
+//----------------
+//user details
+//----------------
+const fetchUserDetailsCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
-  // check if user id is valid
+  //check if user id is valid
   validateMongodbId(id);
   try {
     const user = await User.findById(id);
@@ -109,29 +107,47 @@ const fetchUsersDetailsCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// -------------------------------------
-// USER PROFILE
-// -------------------------------------
-
+//------------------------------
+//User profile
+//------------------------------
 const userProfileCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongodbId(id);
+  //1.Find the login user
+  //2. Check this particular if the login user exists in the array of viewedBy
+
+  //Get the login user
+  const loginUserId = req?.user?._id?.toString();
+  console.log(typeof loginUserId);
   try {
-    const myProfile = await User.findById(id).populate("posts");
-    res.json(myProfile);
+    const myProfile = await User.findById(id)
+      .populate("posts")
+      .populate("viewedBy");
+    const alreadyViewed = myProfile?.viewedBy?.find((user) => {
+      console.log(user);
+      return user?._id?.toString() === loginUserId;
+    });
+    if (alreadyViewed) {
+      res.json(myProfile);
+    } else {
+      const profile = await User.findByIdAndUpdate(myProfile?._id, {
+        $push: { viewedBy: loginUserId },
+      });
+      res.json(profile);
+    }
   } catch (error) {
     res.json(error);
   }
 });
 
-// -------------------------------------
-// UPDATE PROFILE
-// -------------------------------------
-
+//------------------------------
+//Update profile
+//------------------------------
 const updateUserCtrl = expressAsyncHandler(async (req, res) => {
   const { _id } = req?.user;
+  //block
+  blockUser(req?.user);
   validateMongodbId(_id);
-
   const user = await User.findByIdAndUpdate(
     _id,
     {
@@ -145,21 +161,19 @@ const updateUserCtrl = expressAsyncHandler(async (req, res) => {
       runValidators: true,
     }
   );
-
   res.json(user);
 });
 
-// -------------------------------------
-// UPDATE PASSWORD
-// -------------------------------------
+//------------------------------
+//Update password
+//------------------------------
 
 const updateUserPasswordCtrl = expressAsyncHandler(async (req, res) => {
-  // destructure the login user
+  //destructure the login user
   const { _id } = req.user;
-  // this password will come from body
   const { password } = req.body;
   validateMongodbId(_id);
-  // Find the user by id
+  //Find the user by _id
   const user = await User.findById(_id);
 
   if (password) {
@@ -171,24 +185,26 @@ const updateUserPasswordCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// -------------------------------------
-// FOLLOWING
-// -------------------------------------
+//------------------------------
+//following
+//------------------------------
 
 const followingUserCtrl = expressAsyncHandler(async (req, res) => {
+  //1.Find the user you want to follow and update it's followers field
+  //2. Update the login user following field
   const { followId } = req.body;
   const loginUserId = req.user.id;
 
-  /* Find the target user and check if the login id exists. */
+  //find the target user and check if the login id exist
   const targetUser = await User.findById(followId);
 
   const alreadyFollowing = targetUser?.followers?.find(
     (user) => user?.toString() === loginUserId.toString()
   );
 
-  if (alreadyFollowing) throw new Error("You already followed this user");
+  if (alreadyFollowing) throw new Error("You have already followed this user");
 
-  /* 1. Find the user you want to follow and update it's followers field */
+  //1. Find the user you want to follow and update it's followers field
   await User.findByIdAndUpdate(
     followId,
     {
@@ -198,7 +214,7 @@ const followingUserCtrl = expressAsyncHandler(async (req, res) => {
     { new: true }
   );
 
-  /* 2. Update the login user following field */
+  //2. Update the login user following field
   await User.findByIdAndUpdate(
     loginUserId,
     {
@@ -206,12 +222,12 @@ const followingUserCtrl = expressAsyncHandler(async (req, res) => {
     },
     { new: true }
   );
-  res.json("You have successfully following this user");
+  res.json("You have successfully followed this user");
 });
 
-// -------------------------------------
-// UNFOLLOWING
-// -------------------------------------
+//------------------------------
+//unfollow
+//------------------------------
 
 const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
   const { unFollowId } = req.body;
@@ -234,12 +250,12 @@ const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
     { new: true }
   );
 
-  res.json("You have successfully unfollowing this user");
+  res.json("You have successfully unfollowed this user");
 });
 
-// -------------------------------------
-// BLOCK USER
-// -------------------------------------
+//------------------------------
+//Block user
+//------------------------------
 
 const blockUserCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -255,9 +271,9 @@ const blockUserCtrl = expressAsyncHandler(async (req, res) => {
   res.json(user);
 });
 
-// -------------------------------------
-// UNBLOCK USER
-// -------------------------------------
+//------------------------------
+//UnBlock user
+//------------------------------
 
 const unBlockUserCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -273,10 +289,9 @@ const unBlockUserCtrl = expressAsyncHandler(async (req, res) => {
   res.json(user);
 });
 
-// -------------------------------------
-// GENERATE EMAIL VERIFICATION TOKEN
-// -------------------------------------
-
+//------------------------------
+// Generate Email verification token
+//------------------------------
 const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
   // Getting the user id
   const loginUserId = req.user.id;
@@ -307,15 +322,12 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
 });
 
 //------------------------------
-// ACCOUNT VERIFICATION
+//Account verification
 //------------------------------
-
 const accountVerificationCtrl = expressAsyncHandler(async (req, res) => {
   const { token } = req.body;
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-  //Find this user by token
-
+  //find this user by token
   const userFound = await User.findOne({
     accountVerificationToken: hashedToken,
     accountVerificationTokenExpires: { $gt: new Date() },
@@ -365,20 +377,19 @@ const forgetPasswordToken = expressAsyncHandler(async (req, res) => {
 });
 
 //------------------------------
-// PASSWORD RESET
+//Password reset
 //------------------------------
 
 const passwordResetCtrl = expressAsyncHandler(async (req, res) => {
   const { token, password } = req.body;
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-  // Find this user by token
+  //find this user by token
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
-
-  if (!user) throw new Error("Token expired, try again later");
+  if (!user) throw new Error("Token Expired, try again later");
 
   //Update/change the password
   user.password = password;
@@ -387,20 +398,19 @@ const passwordResetCtrl = expressAsyncHandler(async (req, res) => {
   await user.save();
   res.json(user);
 });
-
 //------------------------------
-// PROFILE PHOTO UPLOAD
+//Profile photo upload
 //------------------------------
 
 const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
-  // Find the login user
+  //Find the login user
   const { _id } = req.user;
-
-  // 1. Get the image path
+  //block user
+  blockUser(req?.user);
+  //1. Get the oath to img
   const localPath = `public/images/profile/${req.file.filename}`;
-
-  // 2. Upload the photo to Cloudinary
-  const imgUploaded = await cloudinaryUploadImage(localPath);
+  //2.Upload to cloudinary
+  const imgUploaded = await cloudinaryUploadImg(localPath);
 
   const foundUser = await User.findByIdAndUpdate(
     _id,
@@ -409,21 +419,20 @@ const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
     },
     { new: true }
   );
-
-  // remove the saved image
+  //remove the saved img
   fs.unlinkSync(localPath);
-
-  //res.json(foundUser);
   res.json(imgUploaded);
 });
 
 module.exports = {
+  profilePhotoUploadCtrl,
+  forgetPasswordToken,
   generateVerificationTokenCtrl,
   userRegisterCtrl,
   loginUserCtrl,
   fetchUsersCtrl,
   deleteUsersCtrl,
-  fetchUsersDetailsCtrl,
+  fetchUserDetailsCtrl,
   userProfileCtrl,
   updateUserCtrl,
   updateUserPasswordCtrl,
@@ -432,7 +441,5 @@ module.exports = {
   blockUserCtrl,
   unBlockUserCtrl,
   accountVerificationCtrl,
-  forgetPasswordToken,
   passwordResetCtrl,
-  profilePhotoUploadCtrl,
 };

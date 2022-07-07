@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  createPostController,
+  createPostCtrl,
   fetchPostsCtrl,
   fetchPostCtrl,
   updatePostCtrl,
@@ -11,7 +11,7 @@ const {
 const authMiddleware = require("../../middlewares/auth/authMiddleware");
 const {
   photoUpload,
-  postImageResize,
+  postImgResize,
 } = require("../../middlewares/uploads/photoUpload");
 
 const postRoute = express.Router();
@@ -20,15 +20,14 @@ postRoute.post(
   "/",
   authMiddleware,
   photoUpload.single("image"),
-  postImageResize,
-  createPostController
+  postImgResize,
+  createPostCtrl
 );
 
 postRoute.put("/likes", authMiddleware, toggleAddLikeToPostCtrl);
 postRoute.put("/dislikes", authMiddleware, toggleAddDislikeToPostCtrl);
 postRoute.get("/", fetchPostsCtrl);
 postRoute.get("/:id", fetchPostCtrl);
-postRoute.put("/:id", authMiddleware, updatePostCtrl); // Single post
+postRoute.put("/:id", authMiddleware, updatePostCtrl);
 postRoute.delete("/:id", authMiddleware, deletePostCtrl);
-
 module.exports = postRoute;

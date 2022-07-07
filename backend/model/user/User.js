@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-
-// create schema
-
+//create schema
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -17,7 +15,7 @@ const userSchema = new mongoose.Schema(
     profilePhoto: {
       type: String,
       default:
-        "https://images.squarespace-cdn.com/content/v1/51b3dc8ee4b051b96ceb10de/1401467111255-TM3V8CHFU2O92OGASHQO/tumblr_n6adpeNPvI1qg8i80o3_1280.jpg",
+        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
     },
     email: {
       type: String,
@@ -28,7 +26,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: [true, "Hei buddy Password is required"],
     },
     postCount: {
       type: Number,
@@ -54,13 +52,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    isAccountVerified: {
-      type: Boolean,
-      default: false,
-    },
+    isAccountVerified: { type: Boolean, default: false },
     accountVerificationToken: String,
     accountVerificationTokenExpires: Date,
-    /*It only contains the user ids*/
+
     viewedBy: {
       type: [
         {
@@ -69,6 +64,7 @@ const userSchema = new mongoose.Schema(
         },
       ],
     },
+
     followers: {
       type: [
         {
@@ -85,10 +81,9 @@ const userSchema = new mongoose.Schema(
         },
       ],
     },
-
     passwordChangeAt: Date,
     passwordResetToken: String,
-    passwordResetExpired: Date,
+    passwordResetExpires: Date,
 
     active: {
       type: Boolean,
@@ -106,30 +101,36 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// VIRTUAL MEETHOD TO POPULATEE CREATED POST
+//virtual method to populate created post
 userSchema.virtual("posts", {
   ref: "Post",
   foreignField: "user",
   localField: "_id",
 });
 
-// HASH PASSWORD
+//Account Type
+userSchema.virtual("accountType").get(function () {
+  const totalFollowers = this.followers?.length;
+  return totalFollowers >= 1 ? "Pro Account" : "Starter Account";
+});
+
+//Hash password
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     next();
   }
-  // Hash password
+  //hash password
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// MATCH PASSWORDS
+//match password
 userSchema.methods.isPasswordMatched = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// VERIFY ACCOUNT
+//Verify account
 userSchema.methods.createAccountVerificationToken = async function () {
   //create a token
   const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -141,7 +142,7 @@ userSchema.methods.createAccountVerificationToken = async function () {
   return verificationToken;
 };
 
-// PASSWORD RESET/FORGET
+//Password reset/forget
 
 userSchema.methods.createPasswordResetToken = async function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
@@ -153,8 +154,7 @@ userSchema.methods.createPasswordResetToken = async function () {
   return resetToken;
 };
 
-// COMPILE SCHEMA INTO MODEL
+//Compile schema into model
 const User = mongoose.model("User", userSchema);
 
-/*We need to use our User into our Controller*/
 module.exports = User;

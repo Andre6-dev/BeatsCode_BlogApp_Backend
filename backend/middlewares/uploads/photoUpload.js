@@ -1,18 +1,17 @@
 const multer = require("multer");
 const sharp = require("sharp");
 const path = require("path");
+//storage
+const multerStorage = multer.memoryStorage();
 
-// STORAGED IN MEMORY
-const molterStorage = multer.memoryStorage();
-
-// FILE TYPE CHECKING
-const multerFilter = (req, file, callback) => {
-  // Check file type
+//file type checking
+const multerFilter = (req, file, cb) => {
+  //check file type
   if (file.mimetype.startsWith("image")) {
-    callback(null, true);
+    cb(null, true);
   } else {
-    // Rejected files
-    callback(
+    //rejected files
+    cb(
       {
         message: "Unsupported file format",
       },
@@ -22,17 +21,15 @@ const multerFilter = (req, file, callback) => {
 };
 
 const photoUpload = multer({
-  storage: molterStorage,
+  storage: multerStorage,
   fileFilter: multerFilter,
-  // Apply a size limit to the uploaded image
-  limits: { filesize: 1000000 },
+  limits: { fileSize: 1000000 },
 });
 
-// IMAGE RESIZING
+//Image Resizing
 const profilePhotoResize = async (req, res, next) => {
-  // Check if there is no file to resize
+  //check if there is no file
   if (!req.file) return next();
-
   req.file.filename = `user-${Date.now()}-${req.file.originalname}`;
 
   await sharp(req.file.buffer)
@@ -43,11 +40,10 @@ const profilePhotoResize = async (req, res, next) => {
   next();
 };
 
-// POST IMAGE RESIZING
-const postImageResize = async (req, res, next) => {
-  // Check if there is no file to resize
+//Post Image Resizing
+const postImgResize = async (req, res, next) => {
+  //check if there is no file
   if (!req.file) return next();
-
   req.file.filename = `user-${Date.now()}-${req.file.originalname}`;
 
   await sharp(req.file.buffer)
@@ -57,5 +53,4 @@ const postImageResize = async (req, res, next) => {
     .toFile(path.join(`public/images/posts/${req.file.filename}`));
   next();
 };
-
-module.exports = { photoUpload, profilePhotoResize, postImageResize };
+module.exports = { photoUpload, profilePhotoResize, postImgResize };

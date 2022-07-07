@@ -4,7 +4,7 @@ const {
   loginUserCtrl,
   fetchUsersCtrl,
   deleteUsersCtrl,
-  fetchUsersDetailsCtrl,
+  fetchUserDetailsCtrl,
   userProfileCtrl,
   updateUserCtrl,
   updateUserPasswordCtrl,
@@ -36,6 +36,7 @@ userRoutes.put(
   profilePhotoUploadCtrl
 );
 userRoutes.get("/", authMiddleware, fetchUsersCtrl);
+// Password reset
 userRoutes.post("/forget-password-token", forgetPasswordToken);
 userRoutes.put("/reset-password", passwordResetCtrl);
 userRoutes.put("/password", authMiddleware, updateUserPasswordCtrl);
@@ -45,13 +46,14 @@ userRoutes.post(
   authMiddleware,
   generateVerificationTokenCtrl
 );
+
 userRoutes.put("/verify-account", authMiddleware, accountVerificationCtrl);
 userRoutes.put("/unfollow", authMiddleware, unfollowUserCtrl);
 userRoutes.put("/block-user/:id", authMiddleware, blockUserCtrl);
 userRoutes.put("/unblock-user/:id", authMiddleware, unBlockUserCtrl);
 userRoutes.get("/profile/:id", authMiddleware, userProfileCtrl);
-userRoutes.put("/:id", authMiddleware, updateUserCtrl);
+userRoutes.put("/", authMiddleware, updateUserCtrl);
 userRoutes.delete("/:id", deleteUsersCtrl);
-userRoutes.get("/:id", fetchUsersDetailsCtrl);
+userRoutes.get("/:id", fetchUserDetailsCtrl);
 
 module.exports = userRoutes;

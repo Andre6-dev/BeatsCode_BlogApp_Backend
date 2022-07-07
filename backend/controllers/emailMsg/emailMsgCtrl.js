@@ -3,7 +3,7 @@ const API_KEY = process.env.API_KEY;
 const DOMAIN = process.env.DOMAIN;
 const mailgun = require("mailgun-js");
 const Filter = require("bad-words");
-const EmailMsg = require("../../models/EmailMessaging/EmailMessaging");
+const EmailMsg = require("../../model/EmailMessaging/EmailMessaging");
 const sgMail = mailgun({ apiKey: API_KEY, domain: DOMAIN });
 
 const sendEmailMsgCtrl = expressAsyncHandler(async (req, res) => {
