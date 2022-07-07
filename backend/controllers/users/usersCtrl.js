@@ -312,7 +312,14 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
       text: "Token verification",
       html: resetURL,
     };
-    await mg.messages().send(data);
+    var resp = await mailgun
+      .messages()
+      .send(data)
+      .then((res) => console.log(res))
+      .catch(function (err) {
+        return err;
+      });
+    console.log(resp);
     res.json(resetURL);
   } catch (error) {
     res.json(error);
