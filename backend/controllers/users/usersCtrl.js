@@ -339,6 +339,7 @@ const accountVerificationCtrl = expressAsyncHandler(async (req, res) => {
     accountVerificationToken: hashedToken,
     accountVerificationTokenExpires: { $gt: new Date() },
   });
+  console.log(userFound);
   if (!userFound) throw new Error("Token expired, try again later");
   //update the proprt to true
   userFound.isAccountVerified = true;
