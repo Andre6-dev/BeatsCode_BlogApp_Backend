@@ -298,7 +298,7 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
   const user = await User.findById(loginUserId);
   try {
     // Generates token
-    const verificationToken = await user.createAccountVerificationToken();
+    const verificationToken = await user?.createAccountVerificationToken();
     // Save User
     await user.save();
     console.log(verificationToken);
@@ -312,9 +312,7 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
       text: "Token verification",
       html: resetURL,
     };
-    mg.messages().send(data, function (error, body) {
-      console.log(body);
-    });
+    await mg.messages().send(data);
     res.json(resetURL);
   } catch (error) {
     res.json(error);
