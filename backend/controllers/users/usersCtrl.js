@@ -6,6 +6,8 @@ const User = require("../../model/user/User");
 const validateMongodbId = require("../../utils/validateMongodbID");
 const cloudinaryUploadImg = require("../../utils/cloudinary");
 const blockUser = require("../../utils/blockUser");
+const dotenv = require("dotenv");
+dotenv.config();
 const API_KEY = process.env.API_KEY;
 const DOMAIN = process.env.DOMAIN;
 
@@ -304,7 +306,7 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
     console.log(verificationToken);
 
     const resetURL = `If you were requested to verify your account, verify now within 10 minutes, otherwise ignore this message 
-    <a href="http://localhost:3000/verify-account/${verificationToken}">Click to verify your account</a>`;
+    <a href="https://beatscodeblogappbackend-production.up.railway.app/verify-account/${verificationToken}">Click to verify your account</a>`;
     const data = {
       from: "BeatsCode Blog App <andre@beatscode.com>",
       to: "ndre322@gmail.com",
@@ -312,14 +314,14 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
       text: "Token verification",
       html: resetURL,
     };
-    var resp = await mailgun
-      .messages()
-      .send(data)
-      .then((res) => console.log(res))
-      .catch(function (err) {
-        return err;
-      });
-    console.log(resp);
+    let success = true;
+    try {
+      success = await mg.messages().send(data); // 2
+    } catch (e) {
+      success = false;
+    }
+
+    console.log(success);
     res.json(resetURL);
   } catch (error) {
     res.json(error);
@@ -362,7 +364,7 @@ const forgetPasswordToken = expressAsyncHandler(async (req, res) => {
     await user.save();
 
     const resetURL = `If you were requested to reset your password, reset now within 10 minutes, otherwise ignore this message 
-    <a href="http://localhost:3000/reset-password/${token}">Click to reset</a>`;
+    <a href="https://beatscodeblogappbackend-production.up.railway.app/reset-password/${token}">Click to reset</a>`;
     const data = {
       from: "marketingBeatscode@gmail.com",
       to: email,
